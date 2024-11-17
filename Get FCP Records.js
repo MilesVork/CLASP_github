@@ -17,6 +17,8 @@
 
 //This version of the script re-arranges the columns before making transformations on the data coming from the sheet
 
+//COMMENT w
+
 function getRecords() {
 
   //Warehouse spreadsheet: Goods In and Stock Take
