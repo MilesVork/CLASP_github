@@ -17,7 +17,7 @@
 
 //This version of the script re-arranges the columns before making transformations on the data coming from the sheet
 
-//COMMENT w
+//GGGGGGG
 
 function getRecords() {
 
