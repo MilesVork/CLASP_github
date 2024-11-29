@@ -36,7 +36,7 @@ function getRecords() {
   const tubPackingData = filterTubPackingData(tubPackingSheet);
   const lidPackingData = filterLidPackingData(lidPackingSheet);
   const stockTakeData = filterStockTakeData(stockTakeSheet);
- 
+
   // Extract row[6] values from goodsInData (unique list of trace codes)
   const goodsInIdentifiers = new Set(goodsInData.map(row => row[6]));
 
@@ -47,7 +47,7 @@ function getRecords() {
 
   // Join all the data
   let finalData = [...goodsInData, ...filteredTubPackingData, ...filteredLidPackingData, ...filteredStockTakeData];
-  
+
   // Write the data in the destination sheet
   const cSpreadsheet = SpreadsheetApp.openById("1zJkkANYRM0MhL-ZzaWFMugYWTNqFODqgbHiIsO0847o");
   const cSheet = cSpreadsheet.getSheetByName("FCP Transactions");
@@ -219,6 +219,13 @@ function filterTubPackingData(tubPackingSheet) {
     return rowCopy;
   });
 
+  // Change amount to negative number
+  combinedData.forEach(row => {
+    if (row[7] != null) {
+      row[7] = row[7] * -1;
+    }
+  });
+
   return combinedData;
 }
 
@@ -296,6 +303,13 @@ function filterLidPackingData(lidPackingSheet) {
     const rowCopy = [...row];
     rowCopy.splice(4, 0, dateTimeArray[index]); // Inserts the DateTime at index 4
     return rowCopy;
+  });
+
+  // Change amount to negative number
+  combinedData.forEach(row => {
+    if (row[7] != null) {
+      row[7] = row[7] * -1;
+    }
   });
 
   return combinedData;
