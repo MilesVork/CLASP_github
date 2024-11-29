@@ -36,24 +36,24 @@ function getRecords() {
   const tubPackingData = filterTubPackingData(tubPackingSheet);
   const lidPackingData = filterLidPackingData(lidPackingSheet);
   const stockTakeData = filterStockTakeData(stockTakeSheet);
-  //console.log("goodsInData length: " + goodsInData.length);
-  //console.log("tubPackingData length: " + tubPackingData.length);
-  //console.log("stockTakeData length: " + stockTakeData.length);
+ 
+  // Extract row[6] values from goodsInData (unique list of trace codes)
+  const goodsInIdentifiers = new Set(goodsInData.map(row => row[6]));
 
-  //Final data
-  //const finalData = goodsInData.concat(stockTakeData).concat(tubPackingData);
-  //const finalData = tubPackingData;
-  const finalData = goodsInData;
+  // Filter tubPackingData and stockTakeData based on goodsInIdentifiers
+  const filteredTubPackingData = tubPackingData.filter(row => goodsInIdentifiers.has(row[6]));
+  const filteredLidPackingData = lidPackingData.filter(row => goodsInIdentifiers.has(row[6]));
+  const filteredStockTakeData = stockTakeData.filter(row => goodsInIdentifiers.has(row[6]));
 
-  //Destination/consolidation spreadsheet
+  // Join all the data
+  let finalData = [...goodsInData, ...filteredTubPackingData, ...filteredLidPackingData, ...filteredStockTakeData];
+  
+  // Write the data in the destination sheet
   const cSpreadsheet = SpreadsheetApp.openById("1zJkkANYRM0MhL-ZzaWFMugYWTNqFODqgbHiIsO0847o");
   const cSheet = cSpreadsheet.getSheetByName("FCP Transactions");
   const cRange = cSheet.getRange(2, 1, finalData.length, finalData[0].length);
-
-  //Write in destination sheet
   cSheet.getRange("A2:H").clear();
   cRange.setValues(finalData);
-
 
 }
 
@@ -305,7 +305,7 @@ function filterLidPackingData(lidPackingSheet) {
 function filterStockTakeData(stockTakeSheet) {
 
   // Define an array with the column numbers you want to retrieve
-  const columns = [1, 21, 2, 19, 6, 22, 18]; // A, U, B, S, F, V, R
+  const columns = [1, 21, 2, 19, 6, 22, 18, 3]; // A, U, B, S, F, V, R
 
   // Get the number of rows in the sheet
   const numRows = stockTakeSheet.getLastRow() - 1; // Adjusts for header row if you start from row 2
@@ -327,8 +327,8 @@ function filterStockTakeData(stockTakeSheet) {
   // Category is Food Contact Packaging
   const filteredRows = arrangedData.filter(row => row.some(element => element !== null && element !== "") && row[7].includes("Food Contact Packaging"));
 
-  // Insert an empty array at index 3 for the additional column (4th position)
-  filteredRows.forEach(row => row.splice(3, 0, "")); // Adds an empty value at index 3
+  // Remove category column
+  filteredRows.forEach(row => row.splice(-1, 1));
 
   const dateTimeArray = filteredRows.map(row => {
     const date = row[2]; // Column I (Date)
