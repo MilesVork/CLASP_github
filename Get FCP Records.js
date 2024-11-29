@@ -33,11 +33,12 @@ function getRecords() {
 
   //Get records
   const goodsInData = filterGoodsInData(goodsInSheet);
-  console.log("goodsInData length: " + goodsInData.length);
-  //const stockTakeData = filterStockTakeData(stockTakeSheet);
-  //console.log("stockTakeData length: " + stockTakeData.length);
-  //const tubPackingData = filterTubPackingData(tubPackingSheet);
+  const tubPackingData = filterTubPackingData(tubPackingSheet);
+  const lidPackingData = filterLidPackingData(lidPackingSheet);
+  const stockTakeData = filterStockTakeData(stockTakeSheet);
+  //console.log("goodsInData length: " + goodsInData.length);
   //console.log("tubPackingData length: " + tubPackingData.length);
+  //console.log("stockTakeData length: " + stockTakeData.length);
 
   //Final data
   //const finalData = goodsInData.concat(stockTakeData).concat(tubPackingData);
@@ -84,7 +85,7 @@ function filterGoodsInData(goodsInSheet) {
   // Remove category column
   filteredRows.forEach(row => row.splice(-2, 2));
 
-  // The packing records have a time column
+  // The goods in records have a time column
   // We calculate the DateTime array
   const dateTimeArray = filteredRows.map(row => {
     const date = row[2]; // Column I (Date)
@@ -151,6 +152,9 @@ function filterTubPackingData(tubPackingSheet) {
   const columnData = columns.map(col => tubPackingSheet.getRange(2, col, numRows, 1).getValues());
 
   //Re-organize the arrays
+  // Column data is an array of array in which each inner array contains all the data of each column from the spreadsheet
+  // Each subarray of column data represents a column, not a row
+  // With the logic below we make each subarray represent a row
   const arrangedData = columnData[0]
     .map((element, elementIndex) => columnData.map(row => row[elementIndex])
       .flat()
@@ -169,8 +173,8 @@ function filterTubPackingData(tubPackingSheet) {
 
     if (date && time) {
 
-      console.log("Date and time exist. Row:");
-      console.log(row);
+      //console.log("Date and time exist. Row:");
+      //console.log(row);
 
       const dateObj = new Date(date); // Create Date object from date
       const timeObj = new Date(time); // Create Date object from time
@@ -191,7 +195,7 @@ function filterTubPackingData(tubPackingSheet) {
 
       // If only date exists, create a time set to midnight
       const dateObj = new Date(date);
-      const timeObj = new Date(0); // Create Date object for time and set to midnight (00:00:00)
+      const timeObj = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate(), 0, 0, 0); // Midnight of the same date
 
       // Calculate the serial number for the date
       const serialDate = (dateObj - new Date(1899, 11, 30)) / (1000 * 60 * 60 * 24);
@@ -202,8 +206,8 @@ function filterTubPackingData(tubPackingSheet) {
       return serialDate + serialTime;
 
     } else {
-      console.log("Missing date. Row:");
-      console.log(row);
+      //console.log("Missing date. Row:");
+      //console.log(row);
       return "Missing Date";
     }
   });
@@ -221,12 +225,80 @@ function filterTubPackingData(tubPackingSheet) {
 function filterLidPackingData(lidPackingSheet) {
 
   const columns = [2, 15, 3, 18, 11, 12];
+  const numRows = lidPackingSheet.getLastRow() - 1;
 
-  //Get the number of rows in each sheet
-  const numRows = lidPackingSheet.getLastRow() - 1; // Adjusts for header row if you start from row 2
-
-  //Retrieve data from each column and store it in an array
+  //Retrieve data from each column
   const columnData = columns.map(col => lidPackingSheet.getRange(2, col, numRows, 1).getValues());
+
+  //Re-organize the arrays
+  // Column data is an array of array in which each inner array contains all the data of each column from the spreadsheet
+  // Each subarray of column data represents a column, not a row
+  // With the logic below we make each subarray represent a row
+  const arrangedData = columnData[0]
+    .map((element, elementIndex) => columnData.map(row => row[elementIndex])
+      .flat()
+    );
+
+  // Use .filter() to keep rows that don't consist entirely of null or empty values (filter our empty rows)
+  const filteredRows = arrangedData.filter(row => row.some(element => element !== null && element !== ""));
+
+  // Insert an empty array at index 3 for the additional column (4th position)
+  filteredRows.forEach(row => row.splice(3, 0, "")); // Adds an empty value at index 3
+
+
+  const dateTimeArray = filteredRows.map(row => {
+    const date = row[2]; // Column I (Date)
+    const time = row[3]; // Column J (Time)
+
+    if (date && time) {
+
+      //console.log("Date and time exist. Row:");
+      //console.log(row);
+
+      const dateObj = new Date(date); // Create Date object from date
+      const timeObj = new Date(time); // Create Date object from time
+
+      // Calculate the serial number for the date
+      const serialDate = (dateObj - new Date(1899, 11, 30)) / (1000 * 60 * 60 * 24);
+
+      // Calculate the fractional part (time as a fraction of the day)
+      const serialTime = (timeObj.getHours() * 3600 + timeObj.getMinutes() * 60 + timeObj.getSeconds()) / 86400;
+
+      // Add the date and time serial numbers together
+      return serialDate + serialTime;
+
+    } else if (date) {
+
+      //console.log("Only date exist. Row:");
+      //console.log(row);
+
+      // If only date exists, create a time set to midnight
+      const dateObj = new Date(date);
+      const timeObj = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate(), 0, 0, 0); // Midnight of the same date
+
+      // Calculate the serial number for the date
+      const serialDate = (dateObj - new Date(1899, 11, 30)) / (1000 * 60 * 60 * 24);
+
+      // Calculate the fractional part (time as a fraction of the day)
+      const serialTime = (timeObj.getHours() * 3600 + timeObj.getMinutes() * 60 + timeObj.getSeconds()) / 86400;
+
+      return serialDate + serialTime;
+
+    } else {
+      //console.log("Missing date. Row:");
+      //console.log(row);
+      return "Missing Date";
+    }
+  });
+
+  // Combine processed data into a final array
+  const combinedData = filteredRows.map((row, index) => {
+    const rowCopy = [...row];
+    rowCopy.splice(4, 0, dateTimeArray[index]); // Inserts the DateTime at index 4
+    return rowCopy;
+  });
+
+  return combinedData;
 
 }
 
@@ -234,52 +306,81 @@ function filterStockTakeData(stockTakeSheet) {
 
   // Define an array with the column numbers you want to retrieve
   const columns = [1, 21, 2, 19, 6, 22, 18]; // A, U, B, S, F, V, R
-  const filterConditionColumn = 3;
 
   // Get the number of rows in the sheet
   const numRows = stockTakeSheet.getLastRow() - 1; // Adjusts for header row if you start from row 2
 
   // Retrieve data from each column and store it in an array
   const columnData = columns.map(col => stockTakeSheet.getRange(2, col, numRows, 1).getValues());
-  const filterColumnData = stockTakeSheet.getRange(2, filterConditionColumn, numRows, 1).getValues();
 
-  // Initialize an empty array to store the combined date-time values
-  let dateTimeArray = [];
+  //Re-organize the arrays
+  // Column data is an array of array in which each inner array contains all the data of each column from the spreadsheet
+  // Each subarray of column data represents a column, not a row
+  // With the logic below we make each subarray represent a row
+  const arrangedData = columnData[0]
+    .map((element, elementIndex) => columnData.map(row => row[elementIndex])
+      .flat()
+    );
 
-  // Loop through the data to create Date objects
-  for (let i = 0; i < numRows; i++) {
-    // Parse the date and time
-    let date = columnData[2][i][0]; // Column I (Date)
-    let time = columnData[3][i][0]; // Column J (Time)
+  // Use .filter() to keep rows that:
+  // don't consist entirely of null or empty values (filter our empty rows)
+  // Category is Food Contact Packaging
+  const filteredRows = arrangedData.filter(row => row.some(element => element !== null && element !== "") && row[7].includes("Food Contact Packaging"));
 
-    // If both date and time are present, combine them into a single Date object
+  // Insert an empty array at index 3 for the additional column (4th position)
+  filteredRows.forEach(row => row.splice(3, 0, "")); // Adds an empty value at index 3
+
+  const dateTimeArray = filteredRows.map(row => {
+    const date = row[2]; // Column I (Date)
+    const time = row[3]; // Column J (Time)
+
     if (date && time) {
-      // Combine the date and time into a full Date string
-      let dateTimeString = Utilities.formatDate(new Date(date), Session.getScriptTimeZone(), 'yyyy-MM-dd') + ' ' + Utilities.formatDate(new Date(time), Session.getScriptTimeZone(), 'HH:mm:ss');
 
-      // Create a Date object from the combined string
-      let dateTime = new Date(dateTimeString);
+      //console.log("Date and time exist. Row:");
+      //console.log(row);
 
-      // Push the Date object into the array
-      dateTimeArray.push(dateTime);
+      const dateObj = new Date(date); // Create Date object from date
+      const timeObj = new Date(time); // Create Date object from time
+
+      // Calculate the serial number for the date
+      const serialDate = (dateObj - new Date(1899, 11, 30)) / (1000 * 60 * 60 * 24);
+
+      // Calculate the fractional part (time as a fraction of the day)
+      const serialTime = (timeObj.getHours() * 3600 + timeObj.getMinutes() * 60 + timeObj.getSeconds()) / 86400;
+
+      // Add the date and time serial numbers together
+      return serialDate + serialTime;
+
+    } else if (date) {
+
+      //console.log("Only date exist. Row:");
+      //console.log(row);
+
+      // If only date exists, create a time set to midnight
+      const dateObj = new Date(date);
+      const timeObj = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate(), 0, 0, 0); // Midnight of the same date
+
+      // Calculate the serial number for the date
+      const serialDate = (dateObj - new Date(1899, 11, 30)) / (1000 * 60 * 60 * 24);
+
+      // Calculate the fractional part (time as a fraction of the day)
+      const serialTime = (timeObj.getHours() * 3600 + timeObj.getMinutes() * 60 + timeObj.getSeconds()) / 86400;
+
+      return serialDate + serialTime;
+
+    } else {
+      //console.log("Missing date. Row:");
+      //console.log(row);
+      return "Missing Date";
     }
-  }
+  });
 
-  // Combine data into a single array where each inner array represents a row with data from the selected columns
-  const combinedData = [];
-  for (let i = 0; i < numRows; i++) {
-    const row = columnData.map(col => col[i][0]);
-    const filterValue = filterColumnData[i][0];
-
-    // Insert the DateTime at the 4th index (position 5)
-    row.splice(4, 0, dateTimeArray[i]);  // Adds DateTime at index 4 (5th position)
-
-    // Filter out rows with empty values in any of the specified columns and where column O has the value "Food Contact Packaging"
-    if (row.every(value => value !== "" && value !== null) && filterValue === "Food Contact Packaging") {
-      combinedData.push(row);
-    }
-
-  }
+  // Combine processed data into a final array
+  const combinedData = filteredRows.map((row, index) => {
+    const rowCopy = [...row];
+    rowCopy.splice(4, 0, dateTimeArray[index]); // Inserts the DateTime at index 4
+    return rowCopy;
+  });
 
   return combinedData;
 
@@ -289,6 +390,5 @@ function check() {
   const productionSpreadsheet = SpreadsheetApp.openById("1mY5yQUJ92FQ7BLdPlvMgTvbqV6Ch5oqWTVIou2vYNys");
   const tubPackingSheet = productionSpreadsheet.getSheetByName("PR Container Record");
   const tubPackingData = filterTubPackingData(tubPackingSheet);
-
 
 }
