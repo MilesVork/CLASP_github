@@ -98,7 +98,7 @@ function shuffle() {
                             // Slice each inner array to the first 5 elements
                             const updatedValues = newBaData.map(row => row.slice(0, 5));
 
-                            console.log("updatedValues: " + updatedValues);
+                            //console.log("updatedValues: " + updatedValues);
 
                             updatedValuesRange.setValues(updatedValues);
                             return shuffle();
@@ -114,7 +114,7 @@ function shuffle() {
                             // Slice each inner array to the first 5 elements
                             const updatedValues = newBaData.map(row => row.slice(0, 5));
 
-                            console.log("updatedValues: " + updatedValues);
+                            //console.log("updatedValues: " + updatedValues);
 
                             updatedValuesRange.setValues(updatedValues);
                             return shuffle();
@@ -163,7 +163,7 @@ function shuffle() {
                     // Slice each inner array to the first 5 elements
                     const updatedValues = newBaData.map(row => row.slice(0, 5));
 
-                    console.log("updatedValues: " + updatedValues);
+                    //console.log("updatedValues: " + updatedValues);
 
                     updatedValuesRange.setValues(updatedValues);
                     return shuffle();
@@ -178,7 +178,7 @@ function shuffle() {
                     // Slice each inner array to the first 5 elements
                     const updatedValues = newBaData.map(row => row.slice(0, 5));
 
-                    console.log("updatedValues: " + updatedValues);
+                    //console.log("updatedValues: " + updatedValues);
 
                     updatedValuesRange.setValues(updatedValues);
                     return shuffle();
@@ -210,7 +210,7 @@ function shuffle() {
                         // Slice each inner array to the first 5 elements
                         const updatedValues = newBaData.map(row => row.slice(0, 5));
 
-                        console.log("updatedValues: " + updatedValues);
+                        //console.log("updatedValues: " + updatedValues);
 
                         updatedValuesRange.setValues(updatedValues);
                         return shuffle();
