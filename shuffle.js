@@ -53,6 +53,7 @@ function shuffle() {
     // Get range for writing updated newBaData values
     const updatedValuesRange = newBaSheet.getRange(6, 1, newBaData.length, 5);
 
+    const yieldIndex = 5;
     const yieldMean = getYieldMean();
     const yieldSD = getYieldSD();
     const yieldLowSD = yieldMean - yieldSD;
@@ -61,234 +62,56 @@ function shuffle() {
 
     for (let i = 0; i < newBaData.length; i++) {
 
+        const currentYield = newBaData[i][yieldIndex];
+        const previousYield = i > 0 ? newBaData[i - 1][yieldIndex] : null;
+        const nextYield = i < newBaData.length - 1 ? newBaData[i + 1][yieldIndex] : null;
+
         console.log("Allocation Capacity: " + allocationCapacity);
         console.log("Iteration: " + i);
         console.log("Bulk Trace Code: " + newBaData[i][1]);
 
-        // BRANCH 0
-        if (newBaData[i][5] < 100 && newBaData[i][5] > yieldLowSD) {
-            console.log("BRANCH 0: " + newBaData[i][1] + " is <100 and >(mean-SD)");
 
-            // BRANCH 3
+        if (currentYield > 100) {
 
-            if (i !== 0) {
+            if (previousYield !== null && previousYield < yieldLowSD) {
+                console.log(`Iteration ${i}: Current yield > 100, previous yield < yieldLowSD.`);
+                // Handle case where previous yield is less than yieldLowSD
+                handleCase1(newBaData, i, previousYield);
 
-                if (newBaData[i - 1][5] > 100) {
+            }
 
-                    // BRANCH 7
-                    if (newBaData[i][5] < 100 && newBaData[i][5] < yieldMean) {
-                        console.log("BRANCH 7: " + newBaData[i][1] + " is <100 and >(mean-SD) and before is >100");
-
-                        // Get iteration and allocation capacity
-                        const ac = newBaData[i][7];
-                        const iteration = i;
-                        allocationCapacity.push([iteration, ac]);
-
-                        const prevIteration = iteration - 1;
-                        const prevRa = newBaData[prevIteration][8]; // Get last rellocation amount
-
-                        // BRANCH 13
-                        if (ac > prevRa) {
-                            console.log("BRANCH 13: " + newBaData[i][1] + " is <100 and <mean and before is >100 and ac > ra");
-                            newBaData[prevIteration][3] += prevRa; // Add `ac` to the previous row
-                            newBaData[i][3] -= prevRa // Deduct prevRa the amount transfer to the previous batch
-
-                            console.log("newBAData length after deducting 'ra' from the previous row " + newBaData.length);
-
-                            // Slice each inner array to the first 5 elements
-                            const updatedValues = newBaData.map(row => row.slice(0, 5));
-
-                            //console.log("updatedValues: " + updatedValues);
-
-                            updatedValuesRange.setValues(updatedValues);
-                            return shuffle();
-
-                            // BRANCH 12
-                        } else {
-                            console.log("BRANCH 12: " + newBaData[i][1] + " is <100 and <mean and before is >100 and ac < ra");
-                            newBaData[prevIteration][3] += ac; // Deduct full capacity if it's smaller
-                            newBaData[i][3] -= ac // Add back the amount transfer to the previous batch
-
-                            console.log("newBAData length after deducting 'prevAc' from the previous row " + newBaData.length);
-
-                            // Slice each inner array to the first 5 elements
-                            const updatedValues = newBaData.map(row => row.slice(0, 5));
-
-                            //console.log("updatedValues: " + updatedValues);
-
-                            updatedValuesRange.setValues(updatedValues);
-                            return shuffle();
-
-                        }
-
-
-                        // BRANCH 6
-                    } else {
-                        console.log("BRANCH 6: " + newBaData[i][1] + " is <100 and >mean and before is >100");
-                        continue
-                    }
-
-
-                    // BRANCH 2
-                } else {
-                    console.log("BRANCH 2: " + newBaData[i][1] + " is <100 and >(mean-SD) and before is <100");
-                    continue
-
-                }
+            if (nextYield !== null && nextYield < yieldMean) {
+                console.log(`Iteration ${i}: Current yield > 100, next yield < yieldMean.`);
+                // Handle case where next yield is less than yieldMean
+                handleCase2(newBaData, i, nextYield);
 
             } else continue
-        }
-
-        // BRANCH 1
-        if (newBaData[i][5] < 100 && newBaData[i][5] < yieldLowSD) {
-            console.log("BRANCH 1: " + newBaData[i][1] + " is <100 and <(mean-SD)");
-            // Get iteration and allocation capacity
-            const ac = newBaData[i][7];
-            const iteration = i;
-            allocationCapacity.push([iteration, ac]);
-
-            // BRANCH 5
-            if (newBaData[i - 1][5] > 100) {
-                console.log("BRANCH 5: " + newBaData[i][1] + " is <100 and <(mean-SD) and before >100");
-                const prevIteration = iteration - 1;
-                const prevRa = newBaData[prevIteration][8]; // Get last rellocation amount
-
-                // BRANCH 17
-                if (ac > prevRa) {
-                    newBaData[prevIteration][3] += prevRa; // Add `ac` to the previous row
-                    newBaData[i][3] -= prevRa // Deduct prevRa the amount transfer to the previous batch
-
-                    console.log("newBAData length after deducting 'ra' from the previous row " + newBaData.length);
-
-                    // Slice each inner array to the first 5 elements
-                    const updatedValues = newBaData.map(row => row.slice(0, 5));
-
-                    //console.log("updatedValues: " + updatedValues);
-
-                    updatedValuesRange.setValues(updatedValues);
-                    return shuffle();
-
-                    // BRANCH 16
-                } else {
-                    newBaData[prevIteration][3] += ac; // Deduct full capacity if it's smaller
-                    newBaData[i][3] -= ac // Add back the amount transfer to the previous batch
-
-                    console.log("newBAData length after deducting 'prevAc' from the previous row " + newBaData.length);
-
-                    // Slice each inner array to the first 5 elements
-                    const updatedValues = newBaData.map(row => row.slice(0, 5));
-
-                    //console.log("updatedValues: " + updatedValues);
-
-                    updatedValuesRange.setValues(updatedValues);
-                    return shuffle();
-
-                }
-
-                // BRANCH 11
-            } else continue
-
-            // BRANCH 4
-        } else if (newBaData[i][5] > 100) {
-            console.log("BRANCH 4: " + newBaData[i][1] + " is >100");
-            const ra = newBaData[i][8];
-            const iteration = i;
-
-            // BRANCH 8
-            if (i !== 0) {
-                if (newBaData[i - 1][5] < 100 && newBaData[i - 1][5] < yieldLowSD) {
-                    console.log("BRANCH 8: " + newBaData[i][1] + " is >100 and before is <100 and <(mean-SD)");
-                    const [prevIteration, prevAc] = allocationCapacity[allocationCapacity.length - 1]; // Get last allocation
-
-                    // BRANCH 15
-                    if (prevAc > ra) {
-                        newBaData[prevIteration][3] -= ra; // Deduct `ra` from the previous row
-                        newBaData[i][3] += ra // Add back the amount transfer to the previous batch
-
-                        console.log("newBAData length after deducting 'ra' from the previous row " + newBaData.length);
-
-                        // Slice each inner array to the first 5 elements
-                        const updatedValues = newBaData.map(row => row.slice(0, 5));
-
-                        //console.log("updatedValues: " + updatedValues);
-
-                        updatedValuesRange.setValues(updatedValues);
-                        return shuffle();
-
-                        // BRANCH 14
-                    } else {
-                        newBaData[prevIteration][3] -= prevAc; // Deduct full capacity if it's smaller
-                        newBaData[i][3] += prevAc // Add back the amount transfer to the previous batch
-
-                        console.log("newBAData length after deducting 'prevAc' from the previous row " + newBaData.length);
-
-                        // Slice each inner array to the first 5 elements
-                        const updatedValues = newBaData.map(row => row.slice(0, 5));
-
-                        console.log("updatedValues: " + updatedValues);
-
-                        updatedValuesRange.setValues(updatedValues);
-                        return shuffle();
-
-                    }
-
-                    // BRANCH 9
-                } else if (newBaData[i-1][5] < 100 && newBaData[i-1][5] < yieldMean) {
-                    console.log("BRANCH 9: " + newBaData[i][1] + " is >100 and before is <100 and <mean");
-                    const [prevIteration, prevAc] = allocationCapacity[allocationCapacity.length - 1]; // Get last allocation
-
-                    // BRANCH 19
-                    if (prevAc > ra) {
-                        console.log("BRANCH 19: " + newBaData[i][1] + " is >100 and before is <100 and <mean and acm > ra");
-                        newBaData[prevIteration][3] -= ra; // Deduct `ra` from the previous row
-                        newBaData[i][3] += ra // Add back the amount transfer to the previous batch
-
-                        console.log("newBAData length after deducting 'ra' from the previous row " + newBaData.length);
-
-                        // Slice each inner array to the first 5 elements
-                        const updatedValues = newBaData.map(row => row.slice(0, 5));
-
-                        console.log("updatedValues: " + updatedValues);
-
-                        updatedValuesRange.setValues(updatedValues);
-                        return shuffle();
-
-                        // BRANCH 20
-                    } else {
-                        console.log("BRANCH 19: " + newBaData[i][1] + " is >100 and before is <100 and <mean and acm < ra");
-                        newBaData[prevIteration][3] -= prevAc; // Deduct full capacity if it's smaller
-                        newBaData[i][3] += prevAc // Add back the amount transfer to the previous batch
-
-                        console.log("newBAData length after deducting 'prevAc' from the previous row " + newBaData.length);
-
-                        // Slice each inner array to the first 5 elements
-                        const updatedValues = newBaData.map(row => row.slice(0, 5));
-
-                        console.log("updatedValues: " + updatedValues);
-
-                        updatedValuesRange.setValues(updatedValues);
-                        return shuffle();
-
-                    }
-
-                    // BRANCH 18
-                } else {
-                    
-                    continue
-                }
-
-
-
-
-
-
-            } else continue
-
 
 
         }
+
+
+
+
 
     }
 
 
+}
+
+function handleCase1(newBaData, index, previousYield) {
+    // Example: Adjust previous row's allocation
+    data[index - 1][3] += data[index][3];
+    data[index][3] = 0;
+}
+
+function handleCase2(newBaData, index, nextYield) {
+    // Example: Adjust next row's allocation
+    data[index + 1][3] += data[index][3];
+    data[index][3] = 0;
+}
+
+function handleCase3(newBaData, index) {
+    // Example: Reduce current row's allocation
+    data[index][3] -= 10; // Deduct arbitrary value as an example
 }
